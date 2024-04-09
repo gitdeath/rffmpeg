@@ -465,8 +465,16 @@ def run_remote_command(
         if cmd:
             rffmpeg_command.append(cmd)
 
-    # Encapsulate the entire command within quotes
-    rffmpeg_command.append(f'"{(mapped_cmd or command) + " " + " ".join(command_args)}"')
+
+    # Construct the full command string to be executed remotely
+    if mapped_cmd:
+        full_remote_command = f'"{mapped_cmd} {" ".join(map(shlex.quote, command_args))}"'
+    else:
+        full_remote_command = f'"{command} {" ".join(map(shlex.quote, command_args))}"'
+
+    # Append the full command string to rffmpeg_command
+    rffmpeg_command.append(full_remote_command)
+
 
     # Prepare our default stdin/stderr
     stdin = sys.stdin
