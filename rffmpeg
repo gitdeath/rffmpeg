@@ -450,14 +450,14 @@ def run_local_ffmpeg(config, ffmpeg_args):
 
 
 def run_remote_command(
-    config, target_hid, target_hostname, target_servername, command, command_args, stderr_as_stdout = False, mapped_cmd = None, pre_commands = []
+    config, target_hid, target_hostname, target_servername, command, command_args, stderr_as_stdout=False, mapped_cmd=None, pre_commands=[]
 ):
     """
     Run command against the remote target_hostname.
     """
     rffmpeg_ssh_command = generate_ssh_command(config, target_hostname)
     rffmpeg_ssh_command = [arg.replace('@', '', 1) if arg.startswith('@') else arg for arg in rffmpeg_ssh_command]
- 
+
     rffmpeg_command = list()
 
     # Add any pre commands
@@ -465,16 +465,7 @@ def run_remote_command(
         if cmd:
             rffmpeg_command.append(cmd)
 
-
-    # Construct the full command string to be executed remotely
-    if mapped_cmd:
-        full_remote_command = f'"{mapped_cmd} {" ".join(map(shlex.quote, command_args))}"'
-    else:
-        full_remote_command = f'"{command} {" ".join(map(shlex.quote, command_args))}"'
-
-    # Append the full command string to rffmpeg_command
-    rffmpeg_command.append(full_remote_command)
-
+    rffmpeg_command.append(mapped_cmd or command)
 
     # Prepare our default stdin/stderr
     stdin = sys.stdin
@@ -485,8 +476,12 @@ def run_remote_command(
     else:
         stdout = sys.stdout
 
+    # Enclose the command in quotes
+    rffmpeg_command_str = ' '.join(map(shlex.quote, rffmpeg_command))
+    full_command = f'"{rffmpeg_command_str}"'
+
     log.info(f"Running command on host '{target_hostname}' ({target_servername})")
-    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + rffmpeg_command)}")
+    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + [full_command] + command_args)}")
 
     with dbconn(config) as cur:
         cur.execute(
@@ -499,7 +494,7 @@ def run_remote_command(
         )
 
     return run_command(
-        rffmpeg_ssh_command + rffmpeg_command, stdin, stdout, stderr
+        rffmpeg_ssh_command + [full_command] + command_args, stdin, stdout, stderr
     )
 
 
