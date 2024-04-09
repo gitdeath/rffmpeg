@@ -465,7 +465,8 @@ def run_remote_command(
         if cmd:
             rffmpeg_command.append(cmd)
 
-    rffmpeg_command.append(mapped_cmd or command)
+    rffmpeg_command_str = ' '.join(map(shlex.quote, [mapped_cmd or command] + command_args))
+    full_command = f'"{rffmpeg_command_str}"'
 
     # Prepare our default stdin/stderr
     stdin = sys.stdin
@@ -476,12 +477,8 @@ def run_remote_command(
     else:
         stdout = sys.stdout
 
-    # Enclose the command in quotes
-    rffmpeg_command_str = ' '.join(map(shlex.quote, rffmpeg_command))
-    full_command = f'"{rffmpeg_command_str}"'
-
     log.info(f"Running command on host '{target_hostname}' ({target_servername})")
-    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + [full_command] + command_args)}")
+    log.debug(f"Remote command: {' '.join(rffmpeg_ssh_command + [full_command])}")
 
     with dbconn(config) as cur:
         cur.execute(
@@ -494,7 +491,7 @@ def run_remote_command(
         )
 
     return run_command(
-        rffmpeg_ssh_command + [full_command] + command_args, stdin, stdout, stderr
+        rffmpeg_ssh_command + [full_command], stdin, stdout, stderr
     )
 
 
