@@ -465,7 +465,8 @@ def run_remote_command(
         if cmd:
             rffmpeg_command.append(cmd)
 
-    rffmpeg_command.append(mapped_cmd or command)
+    # Encapsulate the command within quotes
+    rffmpeg_command.append(f'"{mapped_cmd or command}"')
 
     # Prepare our default stdin/stderr
     stdin = sys.stdin
